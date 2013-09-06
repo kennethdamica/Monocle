@@ -9,21 +9,22 @@ local Monocle = {
 	canvas = _lg.newCanvas()
 }
 
-function Monocle:draw(x, y, grid, tileSize, moved, debug)
+function Monocle:draw(x, y, grid, tileSize, moved, debug, draw_mode)
 	self.x = x
 	self.y = y
 	self.grid = grid
 	self.moved = moved or true
 	self.tileSize = tileSize
-	self.debug = debug
+	self.debug = debug or false
+	self.draw_mode = draw_mode or true
 	self.edges = index()
 	self:get_forward_edges()
 	self:link_edges()
 	self:add_projections()
-
-
-	--self:draw_triangles()
-	if debug then
+	if self.draw_mode then
+		self:draw_triangles()
+	end
+	if self.debug then
 		self:draw_debug()
 	end
 end
@@ -81,15 +82,13 @@ function Monocle:add_projections()
 		if not e.projection and not e.split then
 			--add Next
 			if not e[2] then
-				table.insert(edges_to_add, {e,x2,y2, true, 
-								['distance'] = self.distPointToLine(self.x,self.y,x1,y1,x2,y2),
-								['angle'] = math.atan2(y2-self.y,x2-self.x)})
+				table.insert(edges_to_add, {e,x2,y2, true,
+								['distance'] = self.dist_points(self.x,self.y,x2,y2)})
 			end
 			--add Previous
 			if not e[3] then
 				table.insert(edges_to_add, {e, x1,y1, false, 
-								['distance'] = self.distPointToLine(self.x,self.y,x1,y1,x2,y2),
-								['angle'] = math.atan2(y1-self.y,x1-self.x)})
+								['distance'] = self.dist_points(self.x,self.y,x1,y1)})
 			end
 		end
 	end
@@ -97,7 +96,9 @@ function Monocle:add_projections()
 	table.sort( edges_to_add, function(a,b) return a['distance'] < b['distance'] end)
 
 	for _, e in ipairs(edges_to_add) do
-		self:add_projection_edge(unpack(e))
+		if self.edges[e[1][1]] then
+			self:add_projection_edge(unpack(e))
+		end
 	end
 
 end
@@ -111,7 +112,7 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 		local sx1,sy1,sx2,sy2 = unpack(search_edge[1])
 		if search_edge[1] ~= e[1] and not search_edge.projection then
 			local intersectX, intersectY = self:findIntersect(x1,y1,borderX,borderY,sx1,sy1,sx2,sy2,true,true)
-			if intersectX then
+			if intersectX and not (intersectX == sx2 and intersectY == sy2 )then
 				local new_dist2 = (intersectX - x1)^2 + (intersectY - y1)^2
 				if not dist2 or new_dist2 < dist2 then
 					dist2 = new_dist2
@@ -121,7 +122,7 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 			end
 		end
 	end
-	if not found_edge then
+	if not found_edge or self.edges[found_edge[1]].back then
 		return false
 	else 
 		local sx1,sy1,sx2,sy2 = unpack(found_edge[1])
@@ -139,7 +140,7 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 			self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true)
 
 			new_edge2 = tuple(sx1,sy1,closest_intersectionX,closest_intersectionY)
-			self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true)
+			self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true, true)
 
 			self.edges[proj_edge][2] = new_edge
 			self.edges[proj_edge][3] = e[1]
@@ -169,7 +170,6 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 				self:add_projection_edge(found_edge,sx1,sy1,false)
 			end
 
-
 			proj_edge = tuple(closest_intersectionX,closest_intersectionY,x1,y1)
 			self:add_edge(closest_intersectionX,closest_intersectionY,x1,y1, true)
 
@@ -177,7 +177,7 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 			self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true)
 
 			new_edge2 = tuple(closest_intersectionX,closest_intersectionY,sx2,sy2)
-			self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true)
+			self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true,true)
 
 			self.edges[proj_edge][3] = new_edge
 			self.edges[proj_edge][2] = e[1]
@@ -217,6 +217,8 @@ function Monocle:draw_triangles()
 	_lg.setBlendMode('alpha')
 	_lg.setColor(255,255,255)
 
+	--Increase this for large maps
+	local TOLERANCE = 500
 	local start = self:get_closest_edge()
 	local current_edge = start[1]
 	local count = 0
@@ -231,8 +233,8 @@ function Monocle:draw_triangles()
 			break
 		end
 		count = count + 1
-	until current_edge == start[1] or count > 200
-	print('Drew ' .. count .. ' triangles.')
+	until current_edge == start[1] or count > TOLERANCE
+	--print('Drew ' .. count .. ' triangles.')
 	_lg.setCanvas()
 end
 
@@ -253,7 +255,7 @@ end
 function Monocle:draw_vision_edge()
 	--this is the maximum number of cycles.
 	--used to prevent infinite loops.
-	local tolerance = 500
+	local TOLERANCE = 500
 
 	local start = self:get_closest_edge()
 	local current_edge = start[1]
@@ -276,11 +278,12 @@ function Monocle:draw_vision_edge()
 			break
 		end
 		count = count + 1
-	until current_edge == start[1] or count > tolerance
+	until current_edge == start[1] or count > TOLERANCE
 	_lg.setColor(255,255,255)
 end
 
-function Monocle:add_edge(x1,y1,x2,y2,is_proj, split)
+function Monocle:add_edge(x1,y1,x2,y2,is_proj, split, back)
+	local back = back
 	local split = split or false
 	local is_proj = is_proj or false
 	local tup = tuple(x1,y1,x2,y2)
@@ -288,7 +291,8 @@ function Monocle:add_edge(x1,y1,x2,y2,is_proj, split)
 	self.edges[tup] = {tup, false, false, 
 						['projection'] = is_proj, 
 						['distance'] = dist,
-						['split'] = split}
+						['split'] = split,
+						['back'] = back}
 end
 
 function Monocle:draw_debug()
@@ -368,7 +372,6 @@ function Monocle:findIntersect(l1p1x,l1p1y, l1p2x,l1p2y, l2p1x,l2p1y, l2p2x,l2p2
 	    end
 	end
 	return x,y
-	--return self.round(x,round_to),self.round(y,round_to)
 end
 
 function Monocle.distPointToLine(px,py,x1,y1,x2,y2)
