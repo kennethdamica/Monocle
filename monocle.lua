@@ -9,11 +9,19 @@ local Monocle = {
 	canvas = _lg.newCanvas()
 }
 
-function Monocle:draw(x, y, grid, tileSize, moved, debug, draw_mode)
+function Monocle:draw(x, y, grid, tileSize, debug, draw_mode)
+	if self.round(x,5) == self.round(x) then
+		x = x + 0.00001
+	end
+	if self.round(y,5) == self.round(y) then
+		y = y + 0.000015
+	end
+	if x - self.round(x) == y - self.round(y) then
+		x = x + 0.000012
+	end
 	self.x = x
 	self.y = y
 	self.grid = grid
-	self.moved = moved or true
 	self.tileSize = tileSize
 	self.debug = debug or false
 	self.draw_mode = draw_mode or true
@@ -136,32 +144,41 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 			proj_edge = tuple(x1,y1,closest_intersectionX,closest_intersectionY)
 			self:add_edge(x1,y1,closest_intersectionX,closest_intersectionY, true)
 
-			new_edge = tuple(closest_intersectionX,closest_intersectionY,sx2,sy2)
-			self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true)
+			if self.round(closest_intersectionX,5) == self.round(sx1,5) and self.round(closest_intersectionY,5) == self.round(sy1,5) then
 
-			new_edge2 = tuple(sx1,sy1,closest_intersectionX,closest_intersectionY)
-			self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true, true)
+				self.edges[proj_edge][2] = found_edge[1]
+				self.edges[proj_edge][3] = e[1]
 
-			self.edges[proj_edge][2] = new_edge
-			self.edges[proj_edge][3] = e[1]
+				found_edge[3] = proj_edge
 
-			self.edges[new_edge][3] = proj_edge
-			self.edges[new_edge][2] = found_edge[2]
+			else
 
-			self.edges[new_edge2][3] = false
-			self.edges[new_edge2][2] = false
+				new_edge = tuple(closest_intersectionX,closest_intersectionY,sx2,sy2)
+				self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true)
 
-			self.edges[found_edge[1]] = nil
+				new_edge2 = tuple(sx1,sy1,closest_intersectionX,closest_intersectionY)
+				self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true, true)
 
-			for search_edge in self.edges:values() do
-				if search_edge[3] == found_edge[1] then
-					search_edge[3] = new_edge2
+				self.edges[proj_edge][2] = new_edge
+				self.edges[proj_edge][3] = e[1]
+
+				self.edges[new_edge][3] = proj_edge
+				self.edges[new_edge][2] = found_edge[2]
+
+				self.edges[new_edge2][3] = false
+				self.edges[new_edge2][2] = false
+
+				self.edges[found_edge[1]] = nil
+
+				for search_edge in self.edges:values() do
+					if search_edge[3] == found_edge[1] then
+						search_edge[3] = new_edge2
+					end
+					if search_edge[2] == found_edge[1] then
+						search_edge[2] = new_edge
+					end
 				end
-				if search_edge[2] == found_edge[1] then
-					search_edge[2] = new_edge
-				end
-			end
-
+			end 
 			e[2] = proj_edge
 
 		else
@@ -173,34 +190,44 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 			proj_edge = tuple(closest_intersectionX,closest_intersectionY,x1,y1)
 			self:add_edge(closest_intersectionX,closest_intersectionY,x1,y1, true)
 
-			new_edge = tuple(sx1,sy1,closest_intersectionX,closest_intersectionY)
-			self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true)
+			if self.round(closest_intersectionX,5) == self.round(sx1,5) and self.round(closest_intersectionY,5) == self.round(sy1,5) then
 
-			new_edge2 = tuple(closest_intersectionX,closest_intersectionY,sx2,sy2)
-			self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true,true)
+				self.edges[proj_edge][2] = e[1]
+				self.edges[proj_edge][3] = found_edge[1]
 
-			self.edges[proj_edge][3] = new_edge
-			self.edges[proj_edge][2] = e[1]
+				found_edge[2] = proj_edge
 
-			self.edges[new_edge][3] = found_edge[3]
-			self.edges[new_edge][2] = proj_edge
+			else
 
-			--print(found_edge[1], found_edge[2], found_edge[3])
-			if found_edge[3] then
-				self.edges[found_edge[3]][2] = new_edge
-			end
-			self.edges[new_edge2][3] = false
-			self.edges[new_edge2][2] = false
+				new_edge = tuple(sx1,sy1,closest_intersectionX,closest_intersectionY)
+				self:add_edge(sx1,sy1,closest_intersectionX,closest_intersectionY, false, true)
 
-			self.edges[found_edge[1]] = nil
+				new_edge2 = tuple(closest_intersectionX,closest_intersectionY,sx2,sy2)
+				self:add_edge(closest_intersectionX,closest_intersectionY,sx2,sy2, false, true,true)
 
-			for search_edge in self.edges:values() do
-				if search_edge[3] == found_edge[1] then
-					search_edge[3] = new_edge2
+				self.edges[proj_edge][3] = new_edge
+				self.edges[proj_edge][2] = e[1]
+
+				self.edges[new_edge][3] = found_edge[3]
+				self.edges[new_edge][2] = proj_edge
+
+				if found_edge[3] then
+					self.edges[found_edge[3]][2] = new_edge
 				end
-				if search_edge[2] == found_edge[1] then
-					search_edge[2] = new_edge
-				end 
+				self.edges[new_edge2][3] = false
+				self.edges[new_edge2][2] = false
+
+				self.edges[found_edge[1]] = nil
+
+				for search_edge in self.edges:values() do
+					if search_edge[3] == found_edge[1] then
+						search_edge[3] = new_edge2
+					end
+					if search_edge[2] == found_edge[1] then
+						search_edge[2] = new_edge
+					end 
+				end
+
 			end
 
 			e[3] = proj_edge
@@ -222,7 +249,7 @@ function Monocle:draw_triangles()
 	local start = self:get_closest_edge()
 	local current_edge = start[1]
 	local count = 0
-	--print(start[1], start[2], start[3])
+
 	repeat
 		local x1,y1,x2,y2 = unpack(current_edge)
 		_lg.triangle('fill', self.x*self.tileSize,self.y*self.tileSize,
@@ -234,7 +261,7 @@ function Monocle:draw_triangles()
 		end
 		count = count + 1
 	until current_edge == start[1] or count > TOLERANCE
-	--print('Drew ' .. count .. ' triangles.')
+
 	_lg.setCanvas()
 end
 
@@ -267,9 +294,8 @@ function Monocle:draw_vision_edge()
 	_lg.line(self.x*tileSize,self.y*tileSize,x2*tileSize,y2*tileSize)
 
 	_lg.setColor(255,0,0)
-	--print(start[1], start[2], start[3])
+
 	repeat
-		--print(current_edge)
 		local x1,y1,x2,y2 = unpack(current_edge)
 		_lg.line(x1*tileSize,y1*tileSize,x2*tileSize,y2*tileSize)
 		if self.edges[current_edge] and self.edges[current_edge][2] then
@@ -355,7 +381,7 @@ end
 -- Lines are given as four numbers (two coordinates)
 function Monocle:findIntersect(l1p1x,l1p1y, l1p2x,l1p2y, l2p1x,l2p1y, l2p2x,l2p2y, seg1, seg2)
 	-- added tolerance
-	local tolerance = 0.00000000001
+	local tolerance = 0.00000001
 	local round_to = 50
 	local a1,b1,a2,b2 = l1p2y-l1p1y, l1p1x-l1p2x, l2p2y-l2p1y, l2p1x-l2p2x
 	local c1,c2 = a1*l1p1x+b1*l1p1y, a2*l2p1x+b2*l2p1y
@@ -400,29 +426,6 @@ end
 function Monocle.round(num, idp)
   local mult = 10^(idp or 0)
   return math.floor(num * mult + 0.5) / mult
-end
---taken from http://stackoverflow.com/questions/15706270/sort-a-table-in-lua
-function Monocle:spairs(t, order)
-    -- collect the keys
-    local keys = {}
-    for k in pairs(t) do keys[#keys+1] = k end
-
-    -- if order function given, sort by it by passing the table and keys a, b,
-    -- otherwise just sort the keys 
-    if order then
-        table.sort(keys, function(a,b) return order(t, a, b) end)
-    else
-        table.sort(keys)
-    end
-
-    -- return the iterator function
-    local i = 0
-    return function()
-        i = i + 1
-        if keys[i] then
-            return keys[i], t[keys[i]]
-        end
-    end
 end
 
 return Monocle
