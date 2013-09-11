@@ -3,7 +3,7 @@
 local _lg = love.graphics
 
 local player = {
-	speed = 2,
+	speed = 1,
 	x = 3.1,
 	y = 3.1,
 	height = 0.1,

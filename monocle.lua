@@ -10,17 +10,18 @@ local Monocle = {
 }
 
 function Monocle:draw(x, y, grid, tileSize, debug, draw_mode)
-	if self.round(x,5) == self.round(x) then
-		x = x + 0.00001
+	if self.round(x,3) == self.round(x) then
+		x = x + 0.001
 	end
-	if self.round(y,5) == self.round(y) then
-		y = y + 0.000015
+	if self.round(y,3) == self.round(y) then
+		y = y + 0.0015
 	end
 	if x - self.round(x) == y - self.round(y) then
-		x = x + 0.000012
+		x = x + 0.0012
 	end
-	self.x = x
-	self.y = y
+	self.x = x + (math.random() - 0.5)/1000
+	self.y = y + (math.random() - 0.5)/1000
+	--print(self.x,self.y)
 	self.grid = grid
 	self.tileSize = tileSize
 	self.debug = debug or false
@@ -120,7 +121,8 @@ function Monocle:add_projection_edge(e, x1,y1, isNext)
 		local sx1,sy1,sx2,sy2 = unpack(search_edge[1])
 		if search_edge[1] ~= e[1] and not search_edge.projection then
 			local intersectX, intersectY = self:findIntersect(x1,y1,borderX,borderY,sx1,sy1,sx2,sy2,true,true)
-			if intersectX and not (intersectX == sx2 and intersectY == sy2 )then
+			if intersectX and not (isNext and intersectX == sx2 and intersectY == sy2 )
+						  and not (not isNext and intersectX == sx1 and intersectY == sy1 ) then
 				local new_dist2 = (intersectX - x1)^2 + (intersectY - y1)^2
 				if not dist2 or new_dist2 < dist2 then
 					dist2 = new_dist2
@@ -251,12 +253,18 @@ function Monocle:draw_triangles()
 	local count = 0
 
 	repeat
-		local x1,y1,x2,y2 = unpack(current_edge)
+		local x1,y1,x2,y2
+		if current_edge then
+			x1,y1,x2,y2 = unpack(current_edge)
+		else
+			break
+		end
 		_lg.triangle('fill', self.x*self.tileSize,self.y*self.tileSize,
 						x1*self.tileSize,y1*self.tileSize,x2*self.tileSize,y2*self.tileSize)
 		if self.edges[current_edge] then
 			current_edge = self.edges[current_edge][2]
 		else
+			print(current_edge)
 			break
 		end
 		count = count + 1
@@ -296,7 +304,12 @@ function Monocle:draw_vision_edge()
 	_lg.setColor(255,0,0)
 
 	repeat
-		local x1,y1,x2,y2 = unpack(current_edge)
+		local x1,y1,x2,y2
+		if current_edge then
+			x1,y1,x2,y2 = unpack(current_edge)
+		else
+			break
+		end
 		_lg.line(x1*tileSize,y1*tileSize,x2*tileSize,y2*tileSize)
 		if self.edges[current_edge] and self.edges[current_edge][2] then
 			current_edge = self.edges[current_edge][2]
@@ -397,7 +410,7 @@ function Monocle:findIntersect(l1p1x,l1p1y, l1p2x,l1p2y, l2p1x,l2p1y, l2p2x,l2p2
 	        return false, "The lines don't intersect."
 	    end
 	end
-	return x,y
+	return x, y
 end
 
 function Monocle.distPointToLine(px,py,x1,y1,x2,y2)
