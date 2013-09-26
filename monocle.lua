@@ -1,4 +1,8 @@
-[[Copyright (C) 2013 Kenneth J. D'Amica
+local Monocle = {
+	edges = index(),
+	canvas = _lg.newCanvas(),
+	__url = 'https://github.com/kennethdamica/Monocle'
+	__license = [[Copyright (C) 2013 Kenneth J. D'Amica
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
@@ -13,16 +17,12 @@ LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE A
 NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.]]
+}
 
 local index = require 'index'
 local tuple = require 'tuple'
 
 local _lg = love.graphics
-
-local Monocle = {
-	edges = index(),
-	canvas = _lg.newCanvas()
-}
 
 function Monocle:draw(x, y, grid, tileSize, debug, draw_mode)
 	if self.round(x,3) == self.round(x) then
