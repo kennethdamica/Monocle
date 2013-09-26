@@ -1,7 +1,7 @@
 local Monocle = {
 	edges = index(),
 	canvas = _lg.newCanvas(),
-	__url = 'https://github.com/kennethdamica/Monocle'
+	__url = 'https://github.com/kennethdamica/Monocle',
 	__license = [[Copyright (C) 2013 Kenneth J. D'Amica
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
