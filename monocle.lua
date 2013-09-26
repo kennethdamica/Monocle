@@ -1,3 +1,8 @@
+local index = require 'index'
+local tuple = require 'tuple'
+
+local _lg = love.graphics
+
 local Monocle = {
 	edges = index(),
 	canvas = _lg.newCanvas(),
@@ -18,11 +23,6 @@ NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
 OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.]]
 }
-
-local index = require 'index'
-local tuple = require 'tuple'
-
-local _lg = love.graphics
 
 function Monocle:draw(x, y, grid, tileSize, debug, draw_mode)
 	if self.round(x,3) == self.round(x) then
